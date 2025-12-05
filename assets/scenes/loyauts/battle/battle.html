@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Battle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        .battle-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="%2300286b"/><circle cx="200" cy="150" r="80" fill="%231a4b8c" opacity="0.3"/><circle cx="600" cy="450" r="120" fill="%231a4b8c" opacity="0.2"/></svg>');
+        }
+
+        /* Боевая сцена */
+        .battle-scene {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Платформы для покемонов */
+        .platform {
+            position: absolute;
+            background: rgba(139, 69, 19, 0.8);
+            border: 3px solid #8B4513;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .platform-player {
+            width: 200px;
+            height: 80px;
+            bottom: 150px;
+            left: 100px;
+        }
+
+        .platform-enemy {
+            width: 200px;
+            height: 80px;
+            top: 150px;
+            right: 100px;
+        }
+
+        /* Покемоны */
+        .pokemon {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: all 0.3s ease;
+        }
+
+        .pokemon-player {
+            bottom: 180px;
+            left: 130px;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%23FF6B6B"/><circle cx="35" cy="40" r="8" fill="white"/><circle cx="65" cy="40" r="8" fill="white"/><circle cx="35" cy="40" r="4" fill="black"/><circle cx="65" cy="40" r="4" fill="black"/><path d="M 30 65 Q 50 75 70 65" stroke="black" stroke-width="3" fill="none"/></svg>');
+        }
+
+        .pokemon-enemy {
+            top: 180px;
+            right: 130px;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%234ECDC4"/><circle cx="35" cy="40" r="8" fill="white"/><circle cx="65" cy="40" r="8" fill="white"/><circle cx="35" cy="40" r="4" fill="black"/><circle cx="65" cy="40" r="4" fill="black"/><path d="M 40 70 L 60 70" stroke="black" stroke-width="3"/></svg>');
+        }
+
+        /* HP бары */
+        .hp-bar {
+            position: absolute;
+            width: 180px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .hp-bar-player {
+            bottom: 280px;
+            left: 110px;
+        }
+
+        .hp-bar-enemy {
+            top: 120px;
+            right: 110px;
+        }
+
+        .hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF6B6B, #FF8E8E);
+            transition: width 0.5s ease;
+            width: 100%;
+        }
+
+        .hp-fill.enemy {
+            background: linear-gradient(90deg, #4ECDC4, #88D8C0);
+        }
+
+        /* Информация о покемонах */
+        .pokemon-info {
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid gold;
+        }
+
+        .info-player {
+            bottom: 310px;
+            left: 110px;
+        }
+
+        .info-enemy {
+            top: 90px;
+            right: 110px;
+        }
+
+        /* Меню боя */
+        .battle-menu {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            background: rgba(0,0,0,0.9);
+            border: 3px solid gold;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .menu-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: gold;
+            font-size: 18px;
+        }
+
+        .attack-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .attack-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .attack-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .attack-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Сообщения боя */
+        .battle-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            padding: 20px 40px;
+            border: 3px solid gold;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 20px;
+            color: white;
+            display: none;
+        }
+
+        /* Анимации */
+        @keyframes attack {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(50px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes takeDamage {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
+        .attacking {
+            animation: attack 0.5s ease;
+        }
+
+        .taking-damage {
+            animation: takeDamage 0.3s ease;
+        }
+
+        /* Кнопка возврата */
+        .return-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: 2px solid gold;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .return-btn:hover {
+            background: rgba(255,215,0,0.3);
+        }
+    </style>
+</head>
+<body>
+<div class="battle-container">
+    <div class="battle-scene">
+        <!-- Платформы -->
+        <div class="platform platform-player"></div>
+        <div class="platform platform-enemy"></div>
+
+        <!-- Покемоны -->
+        <div class="pokemon pokemon-player" id="playerPokemon"></div>
+        <div class="pokemon pokemon-enemy" id="enemyPokemon"></div>
+
+        <!-- HP бары -->
+        <div class="hp-bar hp-bar-player">
+            <div class="hp-fill" id="playerHP" style="width: 100%"></div>
+        </div>
+        <div class="hp-bar hp-bar-enemy">
+            <div class="hp-fill enemy" id="enemyHP" style="width: 100%"></div>
+        </div>
+
+        <!-- Информация -->
+        <div class="pokemon-info info-player">
+            <div>Pikachu Lv.5</div>
+            <div>HP: <span id="playerHPText">100/100</span></div>
+        </div>
+        <div class="pokemon-info info-enemy">
+            <div>Bulbasaur Lv.5</div>
+            <div>HP: <span id="enemyHPText">100/100</span></div>
+        </div>
+
+        <!-- Сообщения -->
+        <div class="battle-message" id="battleMessage"></div>
+
+        <!-- Кнопка возврата -->
+        <button class="return-btn" onclick="returnToMain()">← Назад</button>
+    </div>
+
+    <!-- Меню боя -->
+    <div class="battle-menu">
+        <div class="menu-title">Выберите атаку:</div>
+        <div class="attack-buttons">
+            <button class="attack-btn" onclick="useAttack('thunderbolt')">⚡ Удар молнией</button>
+            <button class="attack-btn" onclick="useAttack('quickAttack')">💨 Быстрая атака</button>
+            <button class="attack-btn" onclick="useAttack('ironTail')">🔩 Железный хвост</button>
+            <button class="attack-btn" onclick="useAttack('thunderWave')">🌀 Волна грома</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Состояние боя
+    const battleState = {
+        playerHP: 100,
+        enemyHP: 100,
+        playerMaxHP: 100,
+        enemyMaxHP: 100,
+        isPlayerTurn: true,
+        gameOver: false
+    };
+
+    // Атаки покемонов
+    const attacks = {
+        thunderbolt: {
+            name: "Удар молнией",
+            damage: { min: 15, max: 25 },
+            type: "electric"
+        },
+        quickAttack: {
+            name: "Быстрая атака",
+            damage: { min: 10, max: 20 },
+            type: "normal"
+        },
+        ironTail: {
+            name: "Железный хвост",
+            damage: { min: 20, max: 30 },
+            type: "steel"
+        },
+        thunderWave: {
+            name: "Волна грома",
+            damage: { min: 5, max: 15 },
+            type: "electric",
+            effect: "paralyze"
+        }
+    };
+
+    // Обновление HP баров
+    function updateHPBars() {
+        const playerHPPercent = (battleState.playerHP / battleState.playerMaxHP) * 100;
+        const enemyHPPercent = (battleState.enemyHP / battleState.enemyMaxHP) * 100;
+
+        document.getElementById('playerHP').style.width = playerHPPercent + '%';
+        document.getElementById('enemyHP').style.width = enemyHPPercent + '%';
+
+        document.getElementById('playerHPText').textContent =
+            battleState.playerHP + '/' + battleState.playerMaxHP;
+        document.getElementById('enemyHPText').textContent =
+            battleState.enemyHP + '/' + battleState.enemyMaxHP;
+    }
+
+    // Показать сообщение
+    function showMessage(message, duration = 2000) {
+        const messageElement = document.getElementById('battleMessage');
+        messageElement.textContent = message;
+        messageElement.style.display = 'block';
+
+        setTimeout(() => {
+            messageElement.style.display = 'none';
+        }, duration);
+    }
+
+    // Анимация атаки
+    function animateAttack(attacker, target) {
+        const attackerElement = document.getElementById(attacker);
+        const targetElement = document.getElementById(target);
+
+        attackerElement.classList.add('attacking');
+        setTimeout(() => {
+            attackerElement.classList.remove('attacking');
+            targetElement.classList.add('taking-damage');
+            setTimeout(() => {
+                targetElement.classList.remove('taking-damage');
+            }, 300);
+        }, 500);
+    }
+
+    // Использование атаки
+    function useAttack(attackKey) {
+        if (!battleState.isPlayerTurn || battleState.gameOver) return;
+
+        const attack = attacks[attackKey];
+        const damage = Math.floor(Math.random() * (attack.damage.max - attack.damage.min + 1)) + attack.damage.min;
+
+        // Атака игрока
+        battleState.enemyHP = Math.max(0, battleState.enemyHP - damage);
+
+        // Анимация и сообщение
+        animateAttack('playerPokemon', 'enemyPokemon');
+        showMessage(`Пикачу использует ${attack.name}! Нанесено ${damage} урона!`);
+
+        updateHPBars();
+        battleState.isPlayerTurn = false;
+
+        // Проверка победы
+        if (battleState.enemyHP <= 0) {
+            setTimeout(() => endBattle(true), 1500);
+            return;
+        }
+
+        // Ход противника
+        setTimeout(enemyTurn, 2000);
+    }
+
+    // Ход противника
+    function enemyTurn() {
+        if (battleState.gameOver) return;
+
+        const attackKeys = Object.keys(attacks);
+        const randomAttack = attackKeys[Math.floor(Math.random() * attackKeys.length)];
+        const attack = attacks[randomAttack];
+        const damage = Math.floor(Math.random() * (attack.damage.max - attack.damage.min + 1)) + attack.damage.min;
+
+        // Атака противника
+        battleState.playerHP = Math.max(0, battleState.playerHP - damage);
+
+        // Анимация и сообщение
+        animateAttack('enemyPokemon', 'playerPokemon');
+        showMessage(`Бульбазавр использует ${attack.name}! Нанесено ${damage} урона!`);
+
+        updateHPBars();
+        battleState.isPlayerTurn = true;
+
+        // Проверка поражения
+        if (battleState.playerHP <= 0) {
+            setTimeout(() => endBattle(false), 1500);
+        }
+    }
+
+    // Завершение битвы
+    function endBattle(playerWon) {
+        battleState.gameOver = true;
+
+        if (playerWon) {
+            showMessage("Победа! Пикачу одержал победу!", 3000);
+            // Можно добавить награды или переход дальше
+        } else {
+            showMessage("Поражение! Пикачу проиграл битву!", 3000);
+        }
+
+        // Кнопка рестарта
+        setTimeout(() => {
+            const restartBtn = document.createElement('button');
+            restartBtn.textContent = 'Сражаться снова';
+            restartBtn.className = 'attack-btn';
+            restartBtn.style.margin = '10px auto';
+            restartBtn.style.display = 'block';
+            restartBtn.onclick = restartBattle;
+
+            document.querySelector('.battle-menu').appendChild(restartBtn);
+        }, 3500);
+    }
+
+    // Рестарт битвы
+    function restartBattle() {
+        battleState.playerHP = 100;
+        battleState.enemyHP = 100;
+        battleState.isPlayerTurn = true;
+        battleState.gameOver = false;
+
+        updateHPBars();
+        document.querySelector('.battle-menu').lastChild.remove();
+        showMessage("Новая битва начинается!");
+    }
+
+    // Возврат в главное меню
+    function returnToMain() {
+        if (confirm('Вернуться в главное меню?')) {
+            window.location.href = '../index.html'; // или путь к вашей главной странице
+        }
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        showMessage("Битва начинается! Пикачу против Бульбазавра!", 2000);
+        updateHPBars();
+    });
+</script>
+</body>
+</html>
